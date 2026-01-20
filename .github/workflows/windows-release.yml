@@ -7,9 +7,6 @@ on:
         description: "Release tag (e.g. v1.0.0)"
         required: true
         default: "v0.0.0"
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: write
@@ -19,32 +16,21 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install CMake
-        uses: lukka/get-cmake@v3.29.0
-
-      - name: Setup MSVC (VS 2022)
-        uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
-      - name: Clone Axmol
+      - uses: lukka/get-cmake@v3.29.0
+
+      - name: Setup Axmol and Configure
         shell: pwsh
         run: |
           git clone https://github.com/axmolengine/axmol
-
-      - name: Run Axmol setup
-        shell: pwsh
-        run: |
           cd axmol
-          ./setup.ps1
-
-      # New shell so setup.ps1 environment changes apply
-      - name: Configure CMake
-        shell: pwsh
-        run: |
+          . .\setup.ps1
+          cd ..
           cmake -B build_x64
 
       - name: Build
@@ -52,27 +38,17 @@ jobs:
         run: |
           cmake --build build_x64 --config RelWithDebInfo
 
-      - name: Package build output
+      - name: Package
         shell: pwsh
         run: |
           mkdir dist
           Compress-Archive `
             -Path build_x64\RelWithDebInfo\* `
-            -DestinationPath dist\OpenGD-Windows-x64.zip
-
-      # Create tag only when manually triggered
-      - name: Create git tag (manual runs only)
-        if: github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag ${{ inputs.tag }}
-          git push origin ${{ inputs.tag }}
+            -DestinationPath dist/OpenGD-Windows-x64.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          tag_name: ${{ github.event.inputs.tag }}
           files: dist/OpenGD-Windows-x64.zip
           generate_release_notes: true
