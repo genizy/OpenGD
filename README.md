@@ -19,7 +19,7 @@
   <h3 align="center">OpenGD</h3>
 
   <p align="center">
-    Open source implementation of Geometry Dash
+    Open source implementation of Geometry Dashhg
     <br />   
   </p>
   
