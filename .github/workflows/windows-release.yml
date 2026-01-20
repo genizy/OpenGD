@@ -1,0 +1,61 @@
+name: Windows Release (Axmol)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install CMake
+        uses: lukka/get-cmake@v3
+
+      - name: Setup MSVC (VS 2022)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Clone Axmol
+        shell: pwsh
+        run: |
+          git clone https://github.com/axmolengine/axmol
+
+      - name: Run Axmol setup
+        shell: pwsh
+        run: |
+          cd axmol
+          ./setup.ps1
+
+      # New shell so setup.ps1 environment changes apply
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          cmake -B build_x64
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build build_x64 --config RelWithDebInfo
+
+      - name: Package build output
+        shell: pwsh
+        run: |
+          mkdir dist
+          Compress-Archive `
+            -Path build_x64\RelWithDebInfo\* `
+            -DestinationPath dist\OpenGD-Windows-x64.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/OpenGD-Windows-x64.zip
+          generate_release_notes: true
