@@ -27,12 +27,18 @@ jobs:
       - name: Setup Axmol and Configure
         shell: pwsh
         run: |
-          git clone https://github.com/axmolengine/axmol
+          pwd
+          if (!(Test-Path axmol)) {
+            git clone https://github.com/axmolengine/axmol axmol
+          }
           cd axmol
           . .\setup.ps1
           cd ..
-          cmake -B build_x64
-
+          if (!(Test-Path axmol/core)) {
+            Write-Error "axmol/core not found – directory layout is wrong"
+            exit 1
+          }
+          cmake -S . -B build_x64
       - name: Build
         shell: pwsh
         run: |
